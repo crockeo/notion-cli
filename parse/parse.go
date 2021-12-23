@@ -15,7 +15,9 @@ func Property(propName string, propConfig notionapi.PropertyConfig, propValue st
 	if selectPropConfig, ok := propConfig.(*notionapi.SelectPropertyConfig); ok {
 		property, err = ParseSelect(propValue, selectPropConfig.Select.Options)
 	} else if _, ok := propConfig.(*notionapi.DatePropertyConfig); ok {
-		property, err = ParseDate(propValue, time.Now())
+		now := time.Now()
+		now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		property, err = ParseDate(propValue, now)
 	} else {
 		err = errors.ErrInvalidPropertyConfig
 	}
@@ -81,7 +83,13 @@ type DateObject struct {
 type TimelessDate time.Time
 
 func (td *TimelessDate) MarshalJSON() ([]byte, error) {
+	var format string
 	date := (*time.Time)(td)
-	result := date.Format("2006-01-02")
+	if date.Hour() != 0 || date.Minute() != 0 || date.Second() != 0 || date.Nanosecond() != 0 {
+		format = time.RFC3339
+	} else {
+		format = "2006-01-02"
+	}
+	result := date.Format(format)
 	return []byte("\"" + result + "\""), nil
 }

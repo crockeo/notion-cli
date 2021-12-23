@@ -101,6 +101,8 @@ func promptMultiSelect(propertyName string, property *notionapi.MultiSelectPrope
 
 func promptDate(propertyName string, property *notionapi.DatePropertyConfig) (*parse.DateProperty, error) {
 	now := time.Now()
+	now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
 	prompt := promptui.Prompt{
 		Label: propertyName,
 		Validate: func(candidate string) error {
