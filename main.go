@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -109,6 +110,32 @@ func main() {
 		}
 	}
 
+	bodyPrompt := promptui.Prompt{Label: "Body"}
+	body, err := bodyPrompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	children := []notionapi.Block{}
+	if len(body) > 0 {
+		children = append(children, notionapi.ParagraphBlock{
+			BasicBlock: notionapi.BasicBlock{
+				Object: "block",
+				Type:   "paragraph",
+			},
+			Paragraph: notionapi.Paragraph{
+				Text: []notionapi.RichText{
+					{
+						Text: notionapi.Text{
+							Content: body,
+						},
+					},
+				},
+			},
+		})
+	}
+
 	_, err = client.Page.Create(
 		context.Background(),
 		&notionapi.PageCreateRequest{
@@ -117,6 +144,7 @@ func main() {
 				DatabaseID: notionapi.DatabaseID(database.ID),
 			},
 			Properties: properties,
+			Children:   children,
 		},
 	)
 	if err != nil {
