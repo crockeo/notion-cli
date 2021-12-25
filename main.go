@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"time"
 
 	"github.com/jomei/notionapi"
 	"github.com/manifoldco/promptui"
@@ -16,34 +17,119 @@ import (
 
 func main() {
 	config, err := config.Load()
+	guard(err)
+	client := notionapi.NewClient(config.Token)
+
+	args := os.Args[1:]
+	if len(args) != 1 {
+		printHelp()
+		os.Exit(1)
+	}
+
+	command := args[0]
+	if command == "capture" {
+		capture(config, client)
+	} else if command == "complete" {
+		complete(config, client)
+	} else {
+		printHelp()
+		os.Exit(1)
+	}
+}
+
+func guard(err error) {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
 
-	client := notionapi.NewClient(config.Token)
+func printHelp() {
+	fmt.Println("Proper usage:", os.Args[0], "<command>")
+	fmt.Println("  capture     Interactively capture a task from the terminal")
+	fmt.Println("  complete    Complete items with the time at which they were completed")
+}
 
+func complete(config *config.Config, client *notionapi.Client) {
+	now := time.Now()
+	now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	var cursor notionapi.Cursor
+	hasMore := true
+	for hasMore {
+		resp, err := client.Database.Query(
+			context.Background(),
+			notionapi.DatabaseID(config.DatabaseID),
+			&notionapi.DatabaseQueryRequest{
+				StartCursor: cursor,
+				CompoundFilter: &notionapi.CompoundFilter{
+					notionapi.FilterOperatorAND: {
+						{
+							Property: "Status",
+							Select: &notionapi.SelectFilterCondition{
+								Equals: "DONE",
+							},
+						},
+						{
+							Property: "Completed",
+							Date: &notionapi.DateFilterCondition{
+								IsEmpty: true,
+							},
+						},
+					},
+				},
+			},
+		)
+		guard(err)
+
+		cursor = resp.NextCursor
+		hasMore = resp.HasMore
+
+		for _, result := range resp.Results {
+			_, err := client.Page.Update(
+				context.Background(),
+				notionapi.PageID(result.ID),
+				&notionapi.PageUpdateRequest{
+					Properties: notionapi.Properties{
+						"Completed": &parse.DateProperty{
+							Date: parse.DateObject{
+								Start: (*parse.TimelessDate)(&now),
+							},
+						},
+					},
+				},
+			)
+			guard(err)
+		}
+	}
+}
+
+func capture(config *config.Config, client *notionapi.Client) {
 	// pulling the database takes a moment
 	// so we disguise the API call latency
 	// behind a prompt for the page title
 	databaseChan := make(chan *notionapi.Database)
+	errChan := make(chan error)
 	go func() {
 		database, err := client.Database.Get(context.Background(), notionapi.DatabaseID(config.DatabaseID))
+		guard(err)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			errChan <- err
+		} else {
+			databaseChan <- database
 		}
-		databaseChan <- database
 	}()
 
 	titlePrompt := promptui.Prompt{Label: "Title"}
 	title, err := titlePrompt.Run()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	guard(err)
 
-	database := <-databaseChan
+	var database *notionapi.Database
+	select {
+	case database = <-databaseChan:
+	case err := <-errChan:
+		guard(err)
+	}
 
 	properties := map[string]notionapi.Property{}
 	for propName, propValue := range config.Defaults {
@@ -53,10 +139,7 @@ func main() {
 		}
 
 		property, err := parse.Property(propName, propConfig, propValue)
-		if err != nil {
-			fmt.Print(propName, err)
-			os.Exit(1)
-		}
+		guard(err)
 
 		properties[propName] = property
 	}
@@ -77,10 +160,7 @@ func main() {
 		}
 
 		property, err := prompt.Property(title, propName, propConfig)
-		if err != nil {
-			fmt.Print(propName, err)
-			os.Exit(1)
-		}
+		guard(err)
 
 		properties[propName] = property
 	}
@@ -91,10 +171,7 @@ func main() {
 		}
 
 		property, err := prompt.Property(title, propName, propConfig)
-		if err != nil {
-			fmt.Println(propName, err)
-			os.Exit(1)
-		}
+		guard(err)
 
 		properties[propName] = property
 	}
@@ -110,10 +187,7 @@ func main() {
 
 	bodyPrompt := promptui.Prompt{Label: "Body"}
 	body, err := bodyPrompt.Run()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	guard(err)
 
 	children := []notionapi.Block{}
 	if len(body) > 0 {
@@ -145,8 +219,5 @@ func main() {
 			Children:   children,
 		},
 	)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	guard(err)
 }
