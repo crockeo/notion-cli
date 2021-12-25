@@ -2,22 +2,20 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
 
 	"github.com/jomei/notionapi"
 	"github.com/manifoldco/promptui"
-	"gopkg.in/yaml.v2"
 
+	"github.com/crockeo/notion-cli/config"
 	"github.com/crockeo/notion-cli/parse"
 	"github.com/crockeo/notion-cli/prompt"
 )
 
 func main() {
-	config, err := LoadCaptureConfig()
+	config, err := config.Load()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -151,60 +149,4 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-type CaptureConfig struct {
-	DatabaseID string            `yaml:"database"`
-	Defaults   map[string]string `yaml:"defaults"`
-	Order      []string          `yaml:"order"`
-	Token      notionapi.Token   `yaml:"token"`
-}
-
-func DefaultCaptureConfig() *CaptureConfig {
-	return &CaptureConfig{}
-}
-
-func LoadCaptureConfig() (*CaptureConfig, error) {
-	home, ok := os.LookupEnv("HOME")
-	if !ok {
-		return nil, errors.New("program not provided HOME directory")
-	}
-
-	files := []string{
-		filepath.Join(home, ".notion-cli"),
-		filepath.Join(home, ".config", "notion-cli"),
-		".notion-cli",
-	}
-	suffixes := []string{
-		".yaml",
-		".yml",
-	}
-
-	paths := make([]string, len(files)*len(suffixes))
-	for i, file := range files {
-		for j, suffix := range suffixes {
-			paths[i*len(suffixes)+j] = file + suffix
-		}
-	}
-
-	var contents []byte
-	var err error
-	for _, path := range paths {
-		contents, err = os.ReadFile(path)
-		if err == nil {
-			break
-		}
-	}
-
-	if len(contents) == 0 {
-		return nil, errors.New("could not find a .notion-cli")
-	}
-
-	captureConfig := &CaptureConfig{}
-	err = yaml.Unmarshal(contents, captureConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return captureConfig, nil
 }
