@@ -1,6 +1,10 @@
 package parse
 
 import (
+	"net/mail"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jomei/notionapi"
@@ -12,16 +16,49 @@ import (
 func Property(propName string, propConfig notionapi.PropertyConfig, propValue string) (notionapi.Property, error) {
 	var property notionapi.Property
 	var err error
-	if selectPropConfig, ok := propConfig.(*notionapi.SelectPropertyConfig); ok {
+	// TODO: put all the parsey boys here
+	if _, ok := propConfig.(*notionapi.NumberPropertyConfig); ok {
+		property, err = ParseNumber(propValue)
+	} else if selectPropConfig, ok := propConfig.(*notionapi.SelectPropertyConfig); ok {
 		property, err = ParseSelect(propValue, selectPropConfig.Select.Options)
 	} else if _, ok := propConfig.(*notionapi.DatePropertyConfig); ok {
 		now := time.Now()
 		now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		property, err = ParseDate(propValue, now)
+	} else if _, ok := propConfig.(*notionapi.CheckboxPropertyConfig); ok {
+		property, err = ParseCheckbox(propValue)
+	} else if _, ok := propConfig.(*notionapi.URLPropertyConfig); ok {
+		property, err = ParseURL(propValue)
+	} else if _, ok := propConfig.(*notionapi.EmailPropertyConfig); ok {
+		property, err = ParseEmail(propValue)
 	} else {
 		err = errors.ErrInvalidPropertyConfig
 	}
 	return property, err
+}
+
+func ParseNumber(candidate string) (*notionapi.NumberProperty, error) {
+	number, err := strconv.ParseFloat(candidate, 64)
+	if err != nil {
+		return nil, err
+	}
+	return &notionapi.NumberProperty{
+		Number: number,
+	}, nil
+}
+
+func ParseSelect(candidate string, options []notionapi.Option) (*notionapi.SelectProperty, error) {
+	// FIXME: can a select have multiple options with the same name?
+	// if so, fix this to be more robust
+	for _, option := range options {
+		if candidate == option.Name {
+			return &notionapi.SelectProperty{
+				Select: option,
+			}, nil
+		}
+	}
+
+	return nil, errors.ErrFailedParse
 }
 
 // TODO: migrate all of the property parsing to here,
@@ -48,18 +85,56 @@ func ParseDate(candidate string, now time.Time) (*DateProperty, error) {
 	}, nil
 }
 
-func ParseSelect(candidate string, options []notionapi.Option) (*notionapi.SelectProperty, error) {
-	// FIXME: can a select have multiple options with the same name?
-	// if so, fix this to be more robust
-	for _, option := range options {
-		if candidate == option.Name {
-			return &notionapi.SelectProperty{
-				Select: option,
+func ParseCheckbox(candidate string) (*notionapi.CheckboxProperty, error) {
+	candidate = strings.ToLower(candidate)
+	positiveOptions := []string{
+		"true",
+		"y",
+		"yes",
+	}
+	negativeOptions := []string{
+		"false",
+		"n",
+		"no",
+	}
+
+	for _, positiveOption := range positiveOptions {
+		if candidate == positiveOption {
+			return &notionapi.CheckboxProperty{
+				Checkbox: true,
+			}, nil
+		}
+	}
+
+	for _, negativeOption := range negativeOptions {
+		if candidate == negativeOption {
+			return &notionapi.CheckboxProperty{
+				Checkbox: false,
 			}, nil
 		}
 	}
 
 	return nil, errors.ErrFailedParse
+}
+
+func ParseURL(candidate string) (*notionapi.URLProperty, error) {
+	_, err := url.Parse(candidate)
+	if err != nil {
+		return nil, err
+	}
+	return &notionapi.URLProperty{
+		URL: candidate,
+	}, err
+}
+
+func ParseEmail(candidate string) (*notionapi.EmailProperty, error) {
+	address, err := mail.ParseAddress(candidate)
+	if err != nil {
+		return nil, err
+	}
+	return &notionapi.EmailProperty{
+		Email: address.Address,
+	}, nil
 }
 
 // this cursed block here replicates the API of notion

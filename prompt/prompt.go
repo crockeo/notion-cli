@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -63,8 +64,18 @@ func promptText(propertyName string, property *notionapi.RichTextPropertyConfig)
 }
 
 func promptNumber(propertyName string, property *notionapi.NumberPropertyConfig) (*notionapi.NumberProperty, error) {
-	// TODO: implement
-	return nil, nil
+	prompt := promptui.Prompt{
+		Label: propertyName,
+		Validate: func(candidate string) error {
+			_, err := parse.ParseNumber(candidate)
+			return err
+		},
+	}
+	numberStr, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+	return parse.ParseNumber(numberStr)
 }
 
 func promptSelect(propertyName string, property *notionapi.SelectPropertyConfig) (*notionapi.SelectProperty, error) {
@@ -110,7 +121,6 @@ func promptDate(propertyName string, property *notionapi.DatePropertyConfig) (*p
 			return err
 		},
 	}
-
 	dateStr, err := prompt.Run()
 	if err != nil {
 		return nil, err
@@ -119,18 +129,48 @@ func promptDate(propertyName string, property *notionapi.DatePropertyConfig) (*p
 }
 
 func promptCheckbox(propertyName string, property *notionapi.CheckboxPropertyConfig) (*notionapi.CheckboxProperty, error) {
-	// TODO: implement
-	return nil, nil
+	prompt := promptui.Prompt{
+		Label: fmt.Sprintf("%s (y/n)", propertyName),
+		Validate: func(candidate string) error {
+			_, err := parse.ParseCheckbox(candidate)
+			return err
+		},
+	}
+	checkboxStr, err := prompt.Run()
+	if err != nil && err != promptui.ErrAbort {
+		return nil, err
+	}
+	return parse.ParseCheckbox(checkboxStr)
 }
 
 func promptURL(propertyName string, property *notionapi.URLPropertyConfig) (*notionapi.URLProperty, error) {
-	// TODO: implement
-	return nil, nil
+	prompt := promptui.Prompt{
+		Label: propertyName,
+		Validate: func(candidate string) error {
+			_, err := parse.ParseURL(candidate)
+			return err
+		},
+	}
+	urlStr, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+	return parse.ParseURL(urlStr)
 }
 
 func promptEmail(propertyName string, property *notionapi.EmailPropertyConfig) (*notionapi.EmailProperty, error) {
-	// TODO: implement
-	return nil, nil
+	prompt := promptui.Prompt{
+		Label: propertyName,
+		Validate: func(candidate string) error {
+			_, err := parse.ParseEmail(candidate)
+			return err
+		},
+	}
+	emailStr, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+	return parse.ParseEmail(emailStr)
 }
 
 func promptPhoneNumber(propertyName string, property *notionapi.PhoneNumberPropertyConfig) (*notionapi.PhoneNumberProperty, error) {
