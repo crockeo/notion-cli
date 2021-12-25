@@ -12,14 +12,15 @@ import (
 	"github.com/manifoldco/promptui"
 	"gopkg.in/yaml.v2"
 
-	"github.com/crockeo/notion-capture/parse"
-	"github.com/crockeo/notion-capture/prompt"
+	"github.com/crockeo/notion-cli/parse"
+	"github.com/crockeo/notion-cli/prompt"
 )
 
 func main() {
 	config, err := LoadCaptureConfig()
 	if err != nil {
-		config = DefaultCaptureConfig()
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	client := notionapi.NewClient(config.Token)
@@ -170,9 +171,9 @@ func LoadCaptureConfig() (*CaptureConfig, error) {
 	}
 
 	files := []string{
-		filepath.Join(home, ".notion-capture"),
-		filepath.Join(home, ".config", ".notion-capture"),
-		".notion-capture",
+		filepath.Join(home, ".notion-cli"),
+		filepath.Join(home, ".config", "notion-cli"),
+		".notion-cli",
 	}
 	suffixes := []string{
 		".yaml",
@@ -196,7 +197,7 @@ func LoadCaptureConfig() (*CaptureConfig, error) {
 	}
 
 	if len(contents) == 0 {
-		return nil, errors.New("could not find a .notion-capture")
+		return nil, errors.New("could not find a .notion-cli")
 	}
 
 	captureConfig := &CaptureConfig{}

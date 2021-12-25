@@ -1,4 +1,4 @@
-# notion-capture
+# notion-cli
 
 [Notion](https://notion.com/) is missing a good capture interface
 as in "I just had this thought and need to capture it immediately

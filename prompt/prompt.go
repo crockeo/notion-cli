@@ -7,8 +7,8 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/manifoldco/promptui"
 
-	"github.com/crockeo/notion-capture/errors"
-	"github.com/crockeo/notion-capture/parse"
+	"github.com/crockeo/notion-cli/errors"
+	"github.com/crockeo/notion-cli/parse"
 )
 
 func Property(title string, propName string, propConfig notionapi.PropertyConfig) (notionapi.Property, error) {

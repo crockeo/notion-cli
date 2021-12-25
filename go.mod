@@ -1,4 +1,4 @@
-module github.com/crockeo/notion-capture
+module github.com/crockeo/notion-cli
 
 go 1.17
 

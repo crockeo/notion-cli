@@ -6,7 +6,7 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/olebedev/when"
 
-	"github.com/crockeo/notion-capture/errors"
+	"github.com/crockeo/notion-cli/errors"
 )
 
 func Property(propName string, propConfig notionapi.PropertyConfig, propValue string) (notionapi.Property, error) {
