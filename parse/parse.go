@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jomei/notionapi"
+	"github.com/nyaruka/phonenumbers"
 	"github.com/olebedev/when"
 
 	"github.com/crockeo/notion-cli/errors"
@@ -16,22 +17,25 @@ import (
 func Property(propName string, propConfig notionapi.PropertyConfig, propValue string) (notionapi.Property, error) {
 	var property notionapi.Property
 	var err error
-	// TODO: put all the parsey boys here
-	if _, ok := propConfig.(*notionapi.NumberPropertyConfig); ok {
+
+	switch propConfig := propConfig.(type) {
+	case *notionapi.NumberPropertyConfig:
 		property, err = ParseNumber(propValue)
-	} else if selectPropConfig, ok := propConfig.(*notionapi.SelectPropertyConfig); ok {
-		property, err = ParseSelect(propValue, selectPropConfig.Select.Options)
-	} else if _, ok := propConfig.(*notionapi.DatePropertyConfig); ok {
+	case *notionapi.SelectPropertyConfig:
+		property, err = ParseSelect(propValue, propConfig.Select.Options)
+	case *notionapi.DatePropertyConfig:
 		now := time.Now()
 		now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		property, err = ParseDate(propValue, now)
-	} else if _, ok := propConfig.(*notionapi.CheckboxPropertyConfig); ok {
+	case *notionapi.CheckboxPropertyConfig:
 		property, err = ParseCheckbox(propValue)
-	} else if _, ok := propConfig.(*notionapi.URLPropertyConfig); ok {
+	case *notionapi.URLPropertyConfig:
 		property, err = ParseURL(propValue)
-	} else if _, ok := propConfig.(*notionapi.EmailPropertyConfig); ok {
+	case *notionapi.EmailPropertyConfig:
 		property, err = ParseEmail(propValue)
-	} else {
+	case *notionapi.PhoneNumberPropertyConfig:
+		property, err = ParsePhoneNumber(propValue)
+	default:
 		err = errors.ErrInvalidPropertyConfig
 	}
 	return property, err
@@ -134,6 +138,19 @@ func ParseEmail(candidate string) (*notionapi.EmailProperty, error) {
 	}
 	return &notionapi.EmailProperty{
 		Email: address.Address,
+	}, nil
+}
+
+func ParsePhoneNumber(candidate string) (*notionapi.PhoneNumberProperty, error) {
+	// notion wants a string which contains the phone number
+	// so despite the fact that we parse a structured phone number
+	// we actually don't care about it :)
+	_, err := phonenumbers.Parse(candidate, "US")
+	if err != nil {
+		return nil, err
+	}
+	return &notionapi.PhoneNumberProperty{
+		PhoneNumber: candidate,
 	}, nil
 }
 

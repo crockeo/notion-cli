@@ -16,7 +16,8 @@ func Property(title string, propName string, propConfig notionapi.PropertyConfig
 	var property notionapi.Property
 	var err error
 
-	if _, ok := propConfig.(*notionapi.TitlePropertyConfig); ok {
+	switch propConfig := propConfig.(type) {
+	case *notionapi.TitlePropertyConfig:
 		// we already prompted for the title above
 		// before we had reference to the actual database
 		// so we just populate it here, instead of re-prompting
@@ -29,33 +30,28 @@ func Property(title string, propName string, propConfig notionapi.PropertyConfig
 				},
 			},
 		}
-	} else if textPropConfig, ok := propConfig.(*notionapi.RichTextPropertyConfig); ok {
-		property, err = promptText(propName, textPropConfig)
-	} else if numberPropConfig, ok := propConfig.(*notionapi.NumberPropertyConfig); ok {
-		property, err = promptNumber(propName, numberPropConfig)
-	} else if selectPropConfig, ok := propConfig.(*notionapi.SelectPropertyConfig); ok {
-		property, err = promptSelect(propName, selectPropConfig)
-	} else if multiSelectPropConfig, ok := propConfig.(*notionapi.MultiSelectPropertyConfig); ok {
-		property, err = promptMultiSelect(propName, multiSelectPropConfig)
-	} else if datePropConfig, ok := propConfig.(*notionapi.DatePropertyConfig); ok {
-		property, err = promptDate(propName, datePropConfig)
-	} else if checkboxPropConfig, ok := propConfig.(*notionapi.CheckboxPropertyConfig); ok {
-		property, err = promptCheckbox(propName, checkboxPropConfig)
-	} else if URLPropConfig, ok := propConfig.(*notionapi.URLPropertyConfig); ok {
-		property, err = promptURL(propName, URLPropConfig)
-	} else if emailPropConfig, ok := propConfig.(*notionapi.EmailPropertyConfig); ok {
-		property, err = promptEmail(propName, emailPropConfig)
-	} else if phoneNumberPropConfig, ok := propConfig.(*notionapi.PhoneNumberPropertyConfig); ok {
-		property, err = promptPhoneNumber(propName, phoneNumberPropConfig)
-	} else {
+	case *notionapi.RichTextPropertyConfig:
+		property, err = promptText(propName, propConfig)
+	case *notionapi.NumberPropertyConfig:
+		property, err = promptNumber(propName, propConfig)
+	case *notionapi.SelectPropertyConfig:
+		property, err = promptSelect(propName, propConfig)
+	case *notionapi.MultiSelectPropertyConfig:
+		property, err = promptMultiSelect(propName, propConfig)
+	case *notionapi.DatePropertyConfig:
+		property, err = promptDate(propName, propConfig)
+	case *notionapi.CheckboxPropertyConfig:
+		property, err = promptCheckbox(propName, propConfig)
+	case *notionapi.URLPropertyConfig:
+		property, err = promptURL(propName, propConfig)
+	case *notionapi.EmailPropertyConfig:
+		property, err = promptEmail(propName, propConfig)
+	case *notionapi.PhoneNumberPropertyConfig:
+		property, err = promptPhoneNumber(propName, propConfig)
+	default:
 		err = errors.ErrInvalidPropertyConfig
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return property, nil
+	return property, err
 }
 
 func promptText(propertyName string, property *notionapi.RichTextPropertyConfig) (*notionapi.TextProperty, error) {
@@ -174,8 +170,18 @@ func promptEmail(propertyName string, property *notionapi.EmailPropertyConfig) (
 }
 
 func promptPhoneNumber(propertyName string, property *notionapi.PhoneNumberPropertyConfig) (*notionapi.PhoneNumberProperty, error) {
-	// TODO: implement
-	return nil, nil
+	prompt := promptui.Prompt{
+		Label: propertyName,
+		Validate: func(candidate string) error {
+			_, err := parse.ParseEmail(candidate)
+			return err
+		},
+	}
+	phoneNumberStr, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+	return parse.ParsePhoneNumber(phoneNumberStr)
 }
 
 func normalizeSelect(str string) string {
