@@ -31,7 +31,7 @@ func Property(title string, propName string, propConfig notionapi.PropertyConfig
 			},
 		}
 	case *notionapi.RichTextPropertyConfig:
-		property, err = promptText(propName, propConfig)
+		property, err = promptRichText(propName, propConfig)
 	case *notionapi.NumberPropertyConfig:
 		property, err = promptNumber(propName, propConfig)
 	case *notionapi.SelectPropertyConfig:
@@ -54,9 +54,19 @@ func Property(title string, propName string, propConfig notionapi.PropertyConfig
 	return property, err
 }
 
-func promptText(propertyName string, property *notionapi.RichTextPropertyConfig) (*notionapi.TextProperty, error) {
-	// TODO: implement, and fix function signature
-	return nil, nil
+func promptRichText(propertyName string, property *notionapi.RichTextPropertyConfig) (*notionapi.RichTextProperty, error) {
+	prompt := promptui.Prompt{
+		Label: propertyName,
+		Validate: func(candidate string) error {
+			_, err := parse.ParseRichText(candidate)
+			return err
+		},
+	}
+	richTextStr, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+	return parse.ParseRichText(richTextStr)
 }
 
 func promptNumber(propertyName string, property *notionapi.NumberPropertyConfig) (*notionapi.NumberProperty, error) {
@@ -103,7 +113,7 @@ func promptSelect(propertyName string, property *notionapi.SelectPropertyConfig)
 
 func promptMultiSelect(propertyName string, property *notionapi.MultiSelectPropertyConfig) (*notionapi.MultiSelectProperty, error) {
 	// TODO: implement
-	return nil, nil
+	return nil, errors.ErrFailedParse
 }
 
 func promptDate(propertyName string, property *notionapi.DatePropertyConfig) (*parse.DateProperty, error) {

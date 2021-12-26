@@ -19,10 +19,14 @@ func Property(propName string, propConfig notionapi.PropertyConfig, propValue st
 	var err error
 
 	switch propConfig := propConfig.(type) {
+	case *notionapi.RichTextPropertyConfig:
+		property, err = ParseRichText(propValue)
 	case *notionapi.NumberPropertyConfig:
 		property, err = ParseNumber(propValue)
 	case *notionapi.SelectPropertyConfig:
 		property, err = ParseSelect(propValue, propConfig.Select.Options)
+	case *notionapi.MultiSelectPropertyConfig:
+		property, err = ParseMultiSelect(propValue, propConfig.MultiSelect.Options)
 	case *notionapi.DatePropertyConfig:
 		now := time.Now()
 		now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -39,6 +43,17 @@ func Property(propName string, propConfig notionapi.PropertyConfig, propValue st
 		err = errors.ErrInvalidPropertyConfig
 	}
 	return property, err
+}
+
+func ParseRichText(candidate string) (*notionapi.RichTextProperty, error) {
+	// TODO: do something more advanced here,
+	// e.g. use some sort of markup language
+	// to parse this and render it as RichText
+	return &notionapi.RichTextProperty{
+		RichText: []notionapi.RichText{
+			{Text: notionapi.Text{Content: candidate}},
+		},
+	}, nil
 }
 
 func ParseNumber(candidate string) (*notionapi.NumberProperty, error) {
@@ -62,6 +77,10 @@ func ParseSelect(candidate string, options []notionapi.Option) (*notionapi.Selec
 		}
 	}
 
+	return nil, errors.ErrFailedParse
+}
+
+func ParseMultiSelect(candidate string, options []notionapi.Option) (*notionapi.MultiSelectProperty, error) {
 	return nil, errors.ErrFailedParse
 }
 
