@@ -40,7 +40,7 @@ func Property(propName string, propConfig notionapi.PropertyConfig, propValue st
 	case *notionapi.PhoneNumberPropertyConfig:
 		property, err = ParsePhoneNumber(propValue)
 	default:
-		err = errors.ErrInvalidPropertyConfig
+		err = errors.NewInvalidPropertyConfig(string(propConfig.GetType()))
 	}
 	return property, err
 }
