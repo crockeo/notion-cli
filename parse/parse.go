@@ -10,6 +10,9 @@ import (
 	"github.com/jomei/notionapi"
 	"github.com/nyaruka/phonenumbers"
 	"github.com/olebedev/when"
+	"github.com/olebedev/when/rules"
+	"github.com/olebedev/when/rules/common"
+	"github.com/olebedev/when/rules/en"
 
 	"github.com/crockeo/notion-cli/errors"
 )
@@ -92,7 +95,11 @@ func ParseDate(candidate string, now time.Time) (*DateProperty, error) {
 		return nil, nil
 	}
 
-	result, err := when.EN.Parse(candidate, now)
+	parser := when.Parser{}
+	parser.Add(ExactMonthDateBiasNextYear(rules.Override))
+	parser.Add(en.All...)
+	parser.Add(common.All...)
+	result, err := parser.Parse(candidate, now)
 	if err != nil {
 		return nil, err
 	}
@@ -171,36 +178,4 @@ func ParsePhoneNumber(candidate string) (*notionapi.PhoneNumberProperty, error) 
 	return &notionapi.PhoneNumberProperty{
 		PhoneNumber: candidate,
 	}, nil
-}
-
-// this cursed block here replicates the API of notion
-// while allowing us to serialize datetimes without the time part
-// so that we can schedule tasks without assigning times of days
-type DateProperty struct {
-	ID   notionapi.ObjectID     `json:"id,omitempty"`
-	Type notionapi.PropertyType `json:"type,omitempty"`
-	Date DateObject             `json:"date"`
-}
-
-func (dp *DateProperty) GetType() notionapi.PropertyType {
-	return dp.Type
-}
-
-type DateObject struct {
-	Start *TimelessDate `json:"start"`
-	End   *TimelessDate `json:"end"`
-}
-
-type TimelessDate time.Time
-
-func (td *TimelessDate) MarshalJSON() ([]byte, error) {
-	var format string
-	date := (*time.Time)(td)
-	if date.Hour() != 0 || date.Minute() != 0 || date.Second() != 0 || date.Nanosecond() != 0 {
-		format = time.RFC3339
-	} else {
-		format = "2006-01-02"
-	}
-	result := date.Format(format)
-	return []byte("\"" + result + "\""), nil
 }
