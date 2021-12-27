@@ -12,6 +12,7 @@ require (
 	github.com/AlekSi/pointer v1.0.0 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/gomarkdown/markdown v0.0.0-20211212230626-5af6ad2f47df // indirect
 	github.com/nyaruka/phonenumbers v1.0.73 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect

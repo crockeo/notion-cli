@@ -11,6 +11,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/golang/protobuf v1.3.2 h1:6nsPYzhq5kReh6QImI3k5qWzO4PEbvbIW2cwSfR/6xs=
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/gomarkdown/markdown v0.0.0-20211212230626-5af6ad2f47df h1:M7mdNDTRraBcrHZg2aOYiFP9yTDajb6fquRZRpXnbVA=
+github.com/gomarkdown/markdown v0.0.0-20211212230626-5af6ad2f47df/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
 github.com/jomei/notionapi v1.7.1 h1:1XneT2XbPvdcz9rx0Lu825JK/gwFlDvUIa61O3ECYcw=
 github.com/jomei/notionapi v1.7.1/go.mod h1:wgxFlmxL+oIfxclWkt8jta0PkcBepajish2uCxzBxTo=
 github.com/manifoldco/promptui v0.9.0 h1:3V4HzJk1TtXW1MTZMP7mdlwbBpIinw3HztaIlYthEiA=

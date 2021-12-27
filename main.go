@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/manifoldco/promptui"
 
 	"github.com/crockeo/notion-cli/config"
+	"github.com/crockeo/notion-cli/markdown"
 	"github.com/crockeo/notion-cli/parse"
 	"github.com/crockeo/notion-cli/prompt"
 )
@@ -185,28 +187,21 @@ func capture(config *config.Config, client *notionapi.Client) {
 		}
 	}
 
-	bodyPrompt := promptui.Prompt{Label: "Body"}
-	body, err := bodyPrompt.Run()
-	guard(err)
-
-	children := []notionapi.Block{}
-	if len(body) > 0 {
-		children = append(children, notionapi.ParagraphBlock{
-			BasicBlock: notionapi.BasicBlock{
-				Object: "block",
-				Type:   "paragraph",
-			},
-			Paragraph: notionapi.Paragraph{
-				Text: []notionapi.RichText{
-					{
-						Text: notionapi.Text{
-							Content: body,
-						},
-					},
-				},
-			},
-		})
+	// TODO: make a prettier interface for defining the body
+	// e.g. create a temporary file and open like $EDITOR on it
+	fmt.Println("Body:")
+	contents := []byte{}
+	body := make([]byte, 512)
+	for {
+		n, err := os.Stdin.Read(body)
+		if err == io.EOF {
+			break
+		}
+		guard(err)
+		contents = append(contents, body[:n]...)
 	}
+	children, err := markdown.ToBlocks(contents)
+	guard(err)
 
 	_, err = client.Page.Create(
 		context.Background(),
