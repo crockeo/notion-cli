@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 	"time"
 
@@ -187,19 +189,35 @@ func capture(config *config.Config, client *notionapi.Client) {
 		}
 	}
 
-	// TODO: make a prettier interface for defining the body
-	// e.g. create a temporary file and open like $EDITOR on it
-	fmt.Println("Body:")
 	contents := []byte{}
-	body := make([]byte, 512)
-	for {
-		n, err := os.Stdin.Read(body)
-		if err == io.EOF {
-			break
+	editor, ok := os.LookupEnv("EDITOR")
+	if !ok {
+		fmt.Println("Body:")
+		contents := []byte{}
+		body := make([]byte, 512)
+		for {
+			n, err := os.Stdin.Read(body)
+			if err == io.EOF {
+				break
+			}
+			guard(err)
+			contents = append(contents, body[:n]...)
 		}
+	} else {
+		file, err := ioutil.TempFile("", "*.md")
 		guard(err)
-		contents = append(contents, body[:n]...)
+		defer os.Remove(file.Name())
+
+		cmd := exec.Command(editor, file.Name())
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		err = cmd.Run()
+		guard(err)
+
+		contents, err = os.ReadFile(file.Name())
+		guard(err)
 	}
+
 	children, err := markdown.ToBlocks(contents)
 	guard(err)
 

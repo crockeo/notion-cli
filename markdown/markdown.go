@@ -1,7 +1,6 @@
 package markdown
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -14,10 +13,7 @@ import (
 
 func ToBlocks(contents []byte) ([]notionapi.Block, error) {
 	node := markdown.Parse(contents, parser.New())
-	blocks, err := transform(node)
-	output, _ := json.MarshalIndent(blocks, "", "  ")
-	fmt.Println(string(output))
-	return blocks, err
+	return transform(node)
 }
 
 func transform(node ast.Node) ([]notionapi.Block, error) {
