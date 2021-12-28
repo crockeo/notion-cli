@@ -87,9 +87,6 @@ func ParseMultiSelect(candidate string, options []notionapi.Option) (*notionapi.
 	return nil, errors.ErrFailedParse
 }
 
-// TODO: migrate all of the property parsing to here,
-// instead of in prompt.go
-// so it can be use programmatically
 func ParseDate(candidate string, now time.Time) (*DateProperty, error) {
 	if candidate == "" {
 		return nil, nil
