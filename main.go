@@ -116,7 +116,6 @@ func capture(config *config.Config, client *notionapi.Client) {
 	errChan := make(chan error)
 	go func() {
 		database, err := client.Database.Get(context.Background(), notionapi.DatabaseID(config.DatabaseID))
-		guard(err)
 		if err != nil {
 			errChan <- err
 		} else {
