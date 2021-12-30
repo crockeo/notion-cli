@@ -2,18 +2,30 @@ package config
 
 import (
 	"errors"
-	"path/filepath"
 	"os"
+	"path/filepath"
 
 	"github.com/jomei/notionapi"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	DatabaseID string            `yaml:"database"`
-	Defaults   map[string]string `yaml:"defaults"`
-	Order      []string          `yaml:"order"`
-	Token      notionapi.Token   `yaml:"token"`
+	DatabaseID string          `yaml:"database"`
+	Token      notionapi.Token `yaml:"token"`
+
+	Capture  CaptureConfig  `yaml:"capture"`
+	Complete CompleteConfig `yaml:"complete"`
+}
+
+type CaptureConfig struct {
+	Defaults map[string]string `yaml:"defaults"`
+	Order    []string          `yaml:"order"`
+}
+
+type CompleteConfig struct {
+	StatusProperty    string `yaml:"status_property"`
+	DoneStatus        string `yaml:"done_status"`
+	CompletedProperty string `yaml:"completed_property"`
 }
 
 func Load() (*Config, error) {
@@ -61,12 +73,12 @@ func Load() (*Config, error) {
 	return config, nil
 }
 
-func (config *Config) HasDefault(propName string) bool {
+func (config *CaptureConfig) HasDefault(propName string) bool {
 	_, ok := config.Defaults[propName]
 	return ok
 }
 
-func (config *Config) HasOrder(propName string) bool {
+func (config *CaptureConfig) HasOrder(propName string) bool {
 	// at low order counts (which i imagine there will be)
 	// iterating like this is often just as fast as a hash lookup
 	// so don't come knocking with preemptive optimization requests

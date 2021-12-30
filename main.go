@@ -55,6 +55,30 @@ func printHelp() {
 }
 
 func complete(config *config.Config, client *notionapi.Client) {
+	database, err := getDatabaseSync(config, client)
+	guard(err)
+
+	_, ok := database.Properties[config.Complete.CompletedProperty]
+	if !ok {
+		fmt.Println("config.Complete.CompletedProperty does not exist", config.Complete.CompletedProperty)
+		os.Exit(1)
+	}
+
+	propConfig, ok := database.Properties[config.Complete.StatusProperty]
+	if !ok {
+		fmt.Println("config.Complete.StatusProperty does not exist", config.Complete.StatusProperty)
+		os.Exit(1)
+	}
+
+	selectConfig, ok := propConfig.(*notionapi.SelectPropertyConfig)
+	if !ok {
+		fmt.Println("config.Complete.StatusProperty is not a select")
+		os.Exit(1)
+	}
+
+	_, err = parse.ParseSelect(config.Complete.DoneStatus, selectConfig.Select.Options)
+	guard(err)
+
 	now := time.Now()
 	now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
@@ -69,13 +93,13 @@ func complete(config *config.Config, client *notionapi.Client) {
 				CompoundFilter: &notionapi.CompoundFilter{
 					notionapi.FilterOperatorAND: {
 						{
-							Property: "Status",
+							Property: config.Complete.StatusProperty,
 							Select: &notionapi.SelectFilterCondition{
-								Equals: "DONE",
+								Equals: config.Complete.DoneStatus,
 							},
 						},
 						{
-							Property: "Completed",
+							Property: config.Complete.CompletedProperty,
 							Date: &notionapi.DateFilterCondition{
 								IsEmpty: true,
 							},
@@ -112,16 +136,7 @@ func capture(config *config.Config, client *notionapi.Client) {
 	// pulling the database takes a moment
 	// so we disguise the API call latency
 	// behind a prompt for the page title
-	databaseChan := make(chan *notionapi.Database)
-	errChan := make(chan error)
-	go func() {
-		database, err := client.Database.Get(context.Background(), notionapi.DatabaseID(config.DatabaseID))
-		if err != nil {
-			errChan <- err
-		} else {
-			databaseChan <- database
-		}
-	}()
+	databaseChan, errChan := getDatabase(config, client)
 
 	titlePrompt := promptui.Prompt{Label: "Title"}
 	title, err := titlePrompt.Run()
@@ -135,10 +150,10 @@ func capture(config *config.Config, client *notionapi.Client) {
 	}
 
 	properties := map[string]notionapi.Property{}
-	for propName, propValue := range config.Defaults {
+	for propName, propValue := range config.Capture.Defaults {
 		propConfig, ok := database.Properties[propName]
 		if !ok {
-			fmt.Println("CaptureConfig.Defaults contains propName which doesn't exist", propName)
+			fmt.Println("Config.Capture.Defaults contains propName which doesn't exist", propName)
 		}
 
 		property, err := parse.Property(propName, propConfig, propValue)
@@ -147,21 +162,21 @@ func capture(config *config.Config, client *notionapi.Client) {
 		properties[propName] = property
 	}
 
-	order := config.Order[:]
+	order := config.Capture.Order[:]
 	for propName := range database.Properties {
-		if !config.HasOrder(propName) {
+		if !config.Capture.HasOrder(propName) {
 			order = append(order, propName)
 		}
 	}
 
 	for _, propName := range order {
-		if config.HasDefault(propName) {
+		if config.Capture.HasDefault(propName) {
 			continue
 		}
 
 		propConfig, ok := database.Properties[propName]
 		if !ok {
-			fmt.Println("CaptureConfig.Order contains propName which doesn't exist", propName)
+			fmt.Println("Capture.Capture.Order contains propName which doesn't exist", propName)
 			os.Exit(1)
 		}
 
@@ -226,4 +241,28 @@ func capture(config *config.Config, client *notionapi.Client) {
 		},
 	)
 	guard(err)
+}
+
+func getDatabaseSync(config *config.Config, client *notionapi.Client) (*notionapi.Database, error) {
+	databaseChan, errChan := getDatabase(config, client)
+	select {
+	case database := <-databaseChan:
+		return database, nil
+	case err := <-errChan:
+		return nil, err
+	}
+}
+
+func getDatabase(config *config.Config, client *notionapi.Client) (chan *notionapi.Database, chan error) {
+	databaseChan := make(chan *notionapi.Database)
+	errChan := make(chan error)
+	go func() {
+		database, err := client.Database.Get(context.Background(), notionapi.DatabaseID(config.DatabaseID))
+		if err != nil {
+			errChan <- err
+		} else {
+			databaseChan <- database
+		}
+	}()
+	return databaseChan, errChan
 }
