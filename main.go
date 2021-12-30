@@ -196,11 +196,13 @@ func capture(config *config.Config, client *notionapi.Client) {
 		body := make([]byte, 512)
 		for {
 			n, err := os.Stdin.Read(body)
+			if err != nil && err != io.EOF {
+				guard(err)
+			}
+			contents = append(contents, body[:n]...)
 			if err == io.EOF {
 				break
 			}
-			guard(err)
-			contents = append(contents, body[:n]...)
 		}
 	} else {
 		file, err := ioutil.TempFile("", "*.md")
