@@ -49,9 +49,9 @@ func guard(err error) {
 }
 
 func printHelp() {
-	fmt.Println("Proper usage:", os.Args[0], "<command>")
-	fmt.Println("  capture     Interactively capture a task from the terminal")
-	fmt.Println("  complete    Complete items with the time at which they were completed")
+	fmt.Println("Usage:", os.Args[0], "<command>")
+	fmt.Println("  capture     Interactively capture a task from the terminal.")
+	fmt.Println("  complete    Tag items with the time at which they were completed.")
 }
 
 func complete(config *config.Config, client *notionapi.Client) {
