@@ -60,3 +60,20 @@ func Load() (*Config, error) {
 
 	return config, nil
 }
+
+func (config *Config) HasDefault(propName string) bool {
+	_, ok := config.Defaults[propName]
+	return ok
+}
+
+func (config *Config) HasOrder(propName string) bool {
+	// at low order counts (which i imagine there will be)
+	// iterating like this is often just as fast as a hash lookup
+	// so don't come knocking with preemptive optimization requests
+	for _, targetPropName := range config.Order {
+		if propName == targetPropName {
+			return true
+		}
+	}
+	return false
+}

@@ -147,30 +147,22 @@ func capture(config *config.Config, client *notionapi.Client) {
 		properties[propName] = property
 	}
 
-	for _, propName := range config.Order {
-		if _, ok := properties[propName]; ok {
-			fmt.Println(
-				"CaptureConfig.Order and CaptureConfig.Defaults contain the same propName",
-				propName,
-			)
-			os.Exit(1)
+	order := config.Order[:]
+	for propName := range database.Properties {
+		if !config.HasOrder(propName) {
+			order = append(order, propName)
+		}
+	}
+
+	for _, propName := range order {
+		if config.HasDefault(propName) {
+			continue
 		}
 
 		propConfig, ok := database.Properties[propName]
 		if !ok {
 			fmt.Println("CaptureConfig.Order contains propName which doesn't exist", propName)
 			os.Exit(1)
-		}
-
-		property, err := prompt.Property(title, propName, propConfig)
-		guard(err)
-
-		properties[propName] = property
-	}
-
-	for propName, propConfig := range database.Properties {
-		if _, ok := properties[propName]; ok {
-			continue
 		}
 
 		property, err := prompt.Property(title, propName, propConfig)
