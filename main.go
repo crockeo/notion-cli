@@ -82,6 +82,10 @@ func complete(config *config.Config, client *notionapi.Client) {
 	now := time.Now()
 	now = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
+	// note that this section is intentionally serial
+	// despite being parallelizable
+	// because we generally run this in the background
+	// and don't want to be rate limited by the Notion API
 	var cursor notionapi.Cursor
 	hasMore := true
 	for hasMore {
