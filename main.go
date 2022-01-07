@@ -184,6 +184,11 @@ func capture(config *config.Config, client *notionapi.Client) {
 			fmt.Println("Capture.Capture.Order contains propName which doesn't exist", propName)
 			os.Exit(1)
 		}
+		if _, ok := propConfig.(*notionapi.FormulaPropertyConfig); ok {
+			// we can't populate anything for a formula
+			// so we just keep on rolling
+			continue
+		}
 
 		property, err := prompt.Property(title, propName, propConfig)
 		guard(err)
