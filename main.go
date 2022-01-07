@@ -158,6 +158,7 @@ func capture(config *config.Config, client *notionapi.Client) {
 		propConfig, ok := database.Properties[propName]
 		if !ok {
 			fmt.Println("Config.Capture.Defaults contains propName which doesn't exist", propName)
+			os.Exit(1)
 		}
 
 		property, err := parse.Property(propName, propConfig, propValue)
