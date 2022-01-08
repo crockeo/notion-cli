@@ -70,13 +70,13 @@ func complete(config *config.Config, client *notionapi.Client) {
 		os.Exit(1)
 	}
 
-	selectConfig, ok := propConfig.(*notionapi.SelectPropertyConfig)
+	_, ok = propConfig.(*notionapi.CheckboxPropertyConfig)
 	if !ok {
-		fmt.Println("config.Complete.StatusProperty is not a select")
+		fmt.Println("config.Complete.StatusProperty is not a checkbox")
 		os.Exit(1)
 	}
 
-	_, err = parse.ParseSelect(config.Complete.DoneStatus, selectConfig.Select.Options)
+	checkboxProp, err := parse.ParseCheckbox(config.Complete.DoneStatus)
 	guard(err)
 
 	now := time.Now()
@@ -98,8 +98,8 @@ func complete(config *config.Config, client *notionapi.Client) {
 					notionapi.FilterOperatorAND: {
 						{
 							Property: config.Complete.StatusProperty,
-							Select: &notionapi.SelectFilterCondition{
-								Equals: config.Complete.DoneStatus,
+							Checkbox: &notionapi.CheckboxFilterCondition{
+								Equals: checkboxProp.Checkbox,
 							},
 						},
 						{
