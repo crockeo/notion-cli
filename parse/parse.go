@@ -22,6 +22,8 @@ func Property(propName string, propConfig notionapi.PropertyConfig, propValue st
 	var err error
 
 	switch propConfig := propConfig.(type) {
+	case *notionapi.TitlePropertyConfig:
+		property, err = ParseTitle(propValue)
 	case *notionapi.RichTextPropertyConfig:
 		property, err = ParseRichText(propValue)
 	case *notionapi.NumberPropertyConfig:
@@ -46,6 +48,14 @@ func Property(propName string, propConfig notionapi.PropertyConfig, propValue st
 		err = errors.NewInvalidPropertyConfig(string(propConfig.GetType()))
 	}
 	return property, err
+}
+
+func ParseTitle(candidate string) (*notionapi.TitleProperty, error) {
+	return &notionapi.TitleProperty{
+		Title: []notionapi.RichText{
+			{Text: notionapi.Text{Content: candidate}},
+		},
+	}, nil
 }
 
 func ParseRichText(candidate string) (*notionapi.RichTextProperty, error) {
@@ -80,11 +90,11 @@ func ParseSelect(candidate string, options []notionapi.Option) (*notionapi.Selec
 		}
 	}
 
-	return nil, errors.ErrFailedParse
+	return nil, errors.NewFailedParse(candidate, "select")
 }
 
 func ParseMultiSelect(candidate string, options []notionapi.Option) (*notionapi.MultiSelectProperty, error) {
-	return nil, errors.ErrFailedParse
+	return nil, errors.NewFailedParse(candidate, "multi_select")
 }
 
 func ParseDate(candidate string, now time.Time) (*DateProperty, error) {
@@ -101,7 +111,7 @@ func ParseDate(candidate string, now time.Time) (*DateProperty, error) {
 		return nil, err
 	}
 	if result == nil {
-		return nil, errors.ErrFailedParse
+		return nil, errors.NewFailedParse(candidate, "date")
 	}
 	date := result.Time.Round(0)
 
@@ -141,7 +151,7 @@ func ParseCheckbox(candidate string) (*notionapi.CheckboxProperty, error) {
 		}
 	}
 
-	return nil, errors.ErrFailedParse
+	return nil, errors.NewFailedParse(candidate, "checkbox")
 }
 
 func ParseURL(candidate string) (*notionapi.URLProperty, error) {

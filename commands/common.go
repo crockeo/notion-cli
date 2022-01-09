@@ -18,3 +18,13 @@ func GuardOk(ok bool, message string) {
 		os.Exit(1)
 	}
 }
+
+func PrintHelp() {
+	fmt.Println("Usage:", os.Args[0], "<command>")
+	fmt.Println("  capture [JSON blob]   Interactively capture a task from the terminal.")
+	fmt.Println("                        If JSON is provided, use it as additional default values.")
+	fmt.Println("")
+	fmt.Println("  complete              Tag items with the time at which they were completed.")
+	fmt.Println("")
+	fmt.Println("  dump                  Dumps information about the database in JSON.")
+}

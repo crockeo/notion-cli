@@ -13,7 +13,7 @@ import (
 	"github.com/crockeo/notion-cli/parse"
 )
 
-func Complete(config *config.Config, client *notionapi.Client) {
+func Complete(config *config.Config, client *notionapi.Client, args []string) {
 	database, err := database.GetSync(config, client)
 	commands.Guard(err)
 

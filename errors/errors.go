@@ -1,13 +1,25 @@
 package errors
 
 import (
-	"errors"
 	"fmt"
 )
 
-var (
-	ErrFailedParse = errors.New("failed to parse")
-)
+type ErrFailedParse struct {
+	Candidate string
+	PropType string
+}
+
+func NewFailedParse(candidate, propType string) *ErrFailedParse {
+	return &ErrFailedParse{
+		Candidate: candidate,
+		PropType: propType,
+	}
+}
+
+func (e *ErrFailedParse) Error() string {
+	return fmt.Sprintf("failed to parse '%s' for type '%s'", e.Candidate, e.PropType)
+}
+
 
 type ErrInvalidPropertyConfig struct {
 	Type string

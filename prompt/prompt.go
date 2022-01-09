@@ -113,7 +113,7 @@ func promptSelect(propertyName string, property *notionapi.SelectPropertyConfig)
 
 func promptMultiSelect(propertyName string, property *notionapi.MultiSelectPropertyConfig) (*notionapi.MultiSelectProperty, error) {
 	// TODO: implement
-	return nil, errors.ErrFailedParse
+	return parse.ParseMultiSelect("", property.MultiSelect.Options)
 }
 
 func promptDate(propertyName string, property *notionapi.DatePropertyConfig) (*parse.DateProperty, error) {
