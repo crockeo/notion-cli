@@ -8,6 +8,7 @@ import (
 
 	"github.com/crockeo/notion-cli/commands/capture"
 	"github.com/crockeo/notion-cli/commands/complete"
+	"github.com/crockeo/notion-cli/commands/dump"
 	"github.com/crockeo/notion-cli/config"
 )
 
@@ -27,6 +28,8 @@ func main() {
 		capture.Capture(config, client)
 	} else if command == "complete" {
 		complete.Complete(config, client)
+	} else if command == "dump" {
+		dump.Dump(config, client)
 	} else {
 		printHelp()
 		os.Exit(1)
