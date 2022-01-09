@@ -31,3 +31,12 @@ func GetSync(config *config.Config, client *notionapi.Client) (*notionapi.Databa
 		return nil, err
 	}
 }
+
+func Join(databaseChan chan *notionapi.Database, errChan chan error) (*notionapi.Database, error) {
+	select {
+	case database := <-databaseChan:
+		return database, nil
+	case err := <-errChan:
+		return nil, err
+	}
+}
